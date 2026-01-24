@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Warna Dasar Website (Navy Blue Theme) */
+    --background: 222.2 84% 4.9%; /* Slate 950 (Sangat Gelap) */
+    --foreground: 210 40% 98%; /* Slate 50 (Putih Terang) */
+
+    /* Warna Aksen */
+    --primary: 217.2 91.2% 59.8%; /* Biru cerah */
+    --accent: 47.9 95.8% 53.1%; /* Emas/Kuning untuk highlight */
+  }
+
+  body {
+    /* Mengaplikasikan warna variabel di atas */
+    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased;
+  }
+}
+
+/* Custom Scrollbar (Opsional - Agar terlihat premium) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

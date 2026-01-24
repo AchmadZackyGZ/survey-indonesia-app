@@ -1,0 +1,27 @@
+# --- GLOBAL & OS ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- BACKEND (Golang) ---
+backend/.env
+backend/tmp/
+backend/bin/
+backend/*.exe
+backend/*.exe~
+backend/vendor/
+
+# --- FRONTEND (Next.js & Node) ---
+frontend/node_modules/
+frontend/.next/
+frontend/build/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*

@@ -3,12 +3,15 @@ package controllers
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/AchmadZackyGZ/survey-backend/config"
 	"github.com/AchmadZackyGZ/survey-backend/models"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // CreateSurvey: Menyimpan data survei baru ke MongoDB
@@ -54,36 +57,73 @@ func CreateSurvey(c *gin.Context) {
 	})
 }
 
-// GetAllSurveys: Mengambil semua data survei
+// GetAllSurveys: Mengambil semua data survei (Dengan Filter Terbaru & Limit)
 func GetAllSurveys(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
 
-	var surveys []models.Survey
-	collection := config.GetCollection("surveys")
+    var surveys []models.Survey
+    collection := config.GetCollection("surveys")
 
-	// Find tanpa filter (bson.M{}) artinya ambil semua
-	cursor, err := collection.Find(ctx, map[string]interface{}{}) 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data"})
-		return
-	}
-	defer cursor.Close(ctx)
+    // 1. VALIDASI PARAMETER PAGE
+    pageStr := c.DefaultQuery("page", "1")
+    page, err := strconv.Atoi(pageStr)
+    if err != nil || page < 1 {
+        // Jika bukan angka ATAU angkanya di bawah 1 (misal 0 atau -5)
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status": "error", 
+            "message": "Parameter 'page' harus berupa angka positif (min 1)",
+        })
+        return
+    }
 
-	// Loop cursor untuk decode data ke slice surveys
-	for cursor.Next(ctx) {
-		var survey models.Survey
-		if err := cursor.Decode(&survey); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error decoding data"})
-			return
-		}
-		surveys = append(surveys, survey)
-	}
+    // 2. VALIDASI PARAMETER LIMIT
+    limitStr := c.DefaultQuery("limit", "10")
+    limit, err := strconv.Atoi(limitStr)
+    if err != nil || limit < 1 {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status": "error", 
+            "message": "Parameter 'limit' harus berupa angka positif",
+        })
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   surveys,
-	})
+    // 3. LOGIC PAGINATION (Aman karena page & limit sudah pasti valid)
+    skip := (page - 1) * limit
+
+    findOptions := options.Find()
+    findOptions.SetSort(bson.D{{Key: "created_at", Value: -1}})
+    findOptions.SetLimit(int64(limit))
+    findOptions.SetSkip(int64(skip))
+
+    cursor, err := collection.Find(ctx, bson.M{}, findOptions)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data"})
+        return
+    }
+    defer cursor.Close(ctx)
+
+    for cursor.Next(ctx) {
+        var survey models.Survey
+        if err := cursor.Decode(&survey); err != nil {
+            continue
+        }
+        surveys = append(surveys, survey)
+    }
+
+    // Handle jika data kosong (agar return array kosong [], bukan null)
+    if surveys == nil {
+        surveys = []models.Survey{}
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "status": "success",
+        "data":   surveys,
+        "meta": gin.H{
+            "page":  page,
+            "limit": limit,
+        },
+    })
 }
 
 // GetSurveyBySlug: Mengambil satu survei detail berdasarkan slug URL

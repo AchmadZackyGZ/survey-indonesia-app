@@ -13,8 +13,8 @@ func main() {
 	// 2. Setup Gin Router
 	r := gin.Default()
 
-	// setup RRoute
-	routes.SurveyRoutes(r)
+	// setup Routes
+	routes.SetupRoutes(r)
 
 	// 3. Test Endpoint Sederhana (Ping)
 	r.GET("/ping", func(c *gin.Context) {

@@ -1,29 +1,37 @@
 package main
 
 import (
-	"github.com/AchmadZackyGZ/survey-backend/config" // GANTI 'username' dengan folder asli Anda di go.mod
+	"log"
+	"time"
+
+	"github.com/AchmadZackyGZ/survey-backend/config"
 	"github.com/AchmadZackyGZ/survey-backend/routes"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// 1. Inisialisasi Database (Panggil fungsi yang kita buat di langkah 2)
+	// 1. Connect Database
 	config.ConnectDB()
 
-	// 2. Setup Gin Router
-	r := gin.Default()
+	// 2. Init Router
+	router := gin.Default()
 
-	// setup Routes
-	routes.SetupRoutes(r)
+	// 3. === PASANG CORS DISINI (PENTING!) ===
+	// Ini mengizinkan Frontend (localhost:3000) untuk mengakses Backend
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"}, // URL Frontend Next.js
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
-	// 3. Test Endpoint Sederhana (Ping)
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-			"status":  "Database Connected",
-		})
-	})
+	// 4. Setup Routes
+	routes.SetupRoutes(router)
 
-	// 4. Jalankan Server
-	r.Run(":8080") 
+	// 5. Jalankan Server
+	log.Println("Server running on port 8080")
+	router.Run(":8080")
 }

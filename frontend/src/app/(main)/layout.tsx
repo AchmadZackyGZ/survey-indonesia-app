@@ -1,4 +1,5 @@
 // LOKASI: src/app/(main)/layout.tsx
+import Navbar from "@/components/layout/navbar";
 import Link from "next/link";
 import React from "react";
 
@@ -13,22 +14,7 @@ export default function MainLayout({
 }) {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* --- SEMENTARA: NAVBAR --- */}
-      <header className="fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="font-serif font-bold text-xl text-white">
-            LOGO SEMENTARA
-          </span>
-          <nav className="space-x-4 text-sm font-medium text-slate-300">
-            <Link href="/" className="hover:text-blue-400">
-              Beranda
-            </Link>
-            <a href="/tentang-kami" className="hover:text-blue-400">
-              Tentang
-            </a>
-          </nav>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Konten Halaman akan muncul di sini */}
       <main className="flex-grow pt-16">{children}</main>

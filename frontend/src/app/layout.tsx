@@ -24,8 +24,8 @@ export default function RootLayout({
     <html lang="id">
       <body
         className={`${inter.variable} ${merriweather.variable} bg-slate-950 text-slate-50 antialiased`}
+        suppressHydrationWarning={true}
       >
-        {/* Di sini TIDAK ADA Navbar, hanya children murni */}
         {children}
       </body>
     </html>

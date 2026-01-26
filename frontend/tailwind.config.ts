@@ -11,6 +11,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        gold: {
+          DEFAULT: "#f59e0b", // Amber 500
+          light: "#fbbf24", // Amber 400
+          dark: "#b45309", // Amber 700
+        },
         background: "var(--background)",
         foreground: "var(--foreground)",
       },

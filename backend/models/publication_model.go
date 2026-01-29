@@ -16,4 +16,5 @@ type Publication struct {
 	ImageURL    string             `bson:"image_url" json:"image_url"`
 	PublishedAt time.Time          `bson:"published_at" json:"published_at"`
 	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
 }

@@ -7,33 +7,90 @@ import (
 
 	"github.com/AchmadZackyGZ/survey-backend/config"
 	"github.com/AchmadZackyGZ/survey-backend/models"
+	"github.com/AchmadZackyGZ/survey-backend/utils"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // CreatePublication: Tambah berita baru
 func CreatePublication(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// 1. Parsing Form Data (Karena ada file, tidak bisa pakai BindJSON)
+	// Kita ambil text input manual
+	title := c.PostForm("title")
+	slug := c.PostForm("slug") // Nanti bisa dibikin auto-generate dari title
+	contentType := c.PostForm("type") // Berita / Opini
+	content := c.PostForm("content")
+	author := c.PostForm("author")
 
-	var pub models.Publication
-	if err := c.BindJSON(&pub); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	// 2. Ambil File Gambar dari form "image"
+	file, _, err := c.Request.FormFile("image")
+	
+	var imageUrl string
+	if err == nil {
+		// Jika ada file gambar yang diupload user
+		defer file.Close()
+		
+		// Upload ke Cloudinary
+		imageUrl, err = utils.UploadToCloudinary(file, "publications")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal upload gambar ke Cloudinary"})
+			return
+		}
+	} else {
+		// Jika tidak ada gambar, pakai default atau kosong
+		imageUrl = "https://placehold.co/600x400?text=No+Image"
 	}
 
-	pub.ID = primitive.NewObjectID()
-	pub.PublishedAt = time.Now()
-	pub.CreatedAt = time.Now()
+	// 3. Masukkan ke Database
+	newPub := models.Publication{
+		ID:          primitive.NewObjectID(),
+		Title:       title,
+		Slug:        slug,
+		Type:        contentType,
+		Content:     content,
+		Author:      author,
+		ImageURL:    imageUrl, // URL dari Cloudinary masuk sini
+		PublishedAt: time.Now(),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
 
 	collection := config.GetCollection("publications")
-	result, err := collection.InsertOne(ctx, pub)
+	_, err = collection.InsertOne(context.Background(), newPub)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan berita"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan data"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"status": "success", "data": result})
+	c.JSON(http.StatusCreated, gin.H{
+		"status":  "success",
+		"message": "Publikasi berhasil dibuat",
+		"data":    newPub,
+	})
+	
+	
+	// kodingan lama tanpa upload gambar ke Cloudinary
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
+
+	// var pub models.Publication
+	// if err := c.BindJSON(&pub); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
+	// }
+
+	// pub.ID = primitive.NewObjectID()
+	// pub.PublishedAt = time.Now()
+	// pub.CreatedAt = time.Now()
+
+	// collection := config.GetCollection("publications")
+	// result, err := collection.InsertOne(ctx, pub)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan berita"})
+	// 	return
+	// }
+
+	// c.JSON(http.StatusCreated, gin.H{"status": "success", "data": result})
 }
 
 // GetAllPublications: Ambil semua berita

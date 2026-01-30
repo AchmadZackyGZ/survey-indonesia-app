@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 1. Ambil Header Authorization

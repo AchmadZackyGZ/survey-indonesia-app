@@ -26,6 +26,9 @@ func SetupRoutes(router *gin.Engine) {
 		protected := api.Group("/")
 		protected.Use(middleware.AuthMiddleware()) 
 		{
+			// Dashboard Stats
+			protected.GET("/dashboard/stats", controllers.GetDashboardStats)
+
 			// CRUD Survey (Create)
 			protected.POST("/surveys", controllers.CreateSurvey)
 			

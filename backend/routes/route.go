@@ -18,7 +18,8 @@ func SetupRoutes(router *gin.Engine) {
 		api.GET("/publications", controllers.GetAllPublications)
 		api.GET("/publications/:slug", controllers.GetPublicationBySlug)
 		api.GET("/teams", controllers.GetAllTeamMembers)
-		api.POST("/contact", controllers.CreateContactMessage) // User umum boleh kirim pesan
+		api.POST("/contacts", controllers.CreateContact)
+		
 
 		// === PROTECTED ROUTES (Hanya Admin yang punya Token) ===
 		// Kita pasang middleware di Group ini
@@ -35,7 +36,7 @@ func SetupRoutes(router *gin.Engine) {
 			protected.POST("/teams", controllers.CreateTeamMember)
 			
 			// Inbox Admin (Read)
-			protected.GET("/contact", controllers.GetAllMessages)
+			
 		}
 	}
 }

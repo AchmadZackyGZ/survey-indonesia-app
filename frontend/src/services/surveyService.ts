@@ -25,6 +25,13 @@ export const surveyService = {
     return response.data; // Mengembalikan object { status, data: [], meta }
   },
 
+  // Ambil semua survei dengan pagination
+  getAll: async (page: number = 1, limit: number = 6) => {
+    // Kita kirim parameter page & limit ke backend Go
+    const response = await api.get(`/surveys?page=${page}&limit=${limit}`);
+    return response.data;
+  },
+
   // Ambil detail survei by slug
   getBySlug: async (slug: string) => {
     const response = await api.get(`/surveys/${slug}`);

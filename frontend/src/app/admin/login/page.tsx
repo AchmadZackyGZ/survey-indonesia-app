@@ -1,5 +1,7 @@
 "use client";
 
+import { AxiosError } from "axios";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/authService";
@@ -27,10 +29,18 @@ export default function AdminLoginPage() {
 
       // Jika sukses, arahkan ke Dashboard
       router.push("/admin/dashboard");
-    } catch (err) {
-      console.error("Login gagal", err);
-      // Tampilkan pesan error dari backend atau default
-      setError("Email atau Password salah!");
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        if (err.response && err.response.status === 401) {
+          setError(err.response.data.error || "Email atau password salah.");
+        } else {
+          console.error("Login error:", err);
+          setError("Terjadi kesalahan sistem. Silakan coba lagi.");
+        }
+      } else {
+        console.error("unknown error:", err);
+        setError("Terjadi kesalahan tak terduga. Silakan coba lagi.");
+      }
     } finally {
       setLoading(false);
     }

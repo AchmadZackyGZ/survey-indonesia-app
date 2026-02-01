@@ -11,7 +11,12 @@ import (
 type ChartData struct {
 	Type   string    `bson:"type" json:"type"`     // "bar", "pie", "line"
 	Labels []string  `bson:"labels" json:"labels"` // Sumbu X
-	Series []float64 `bson:"series" json:"series"` // Sumbu Y (Data Angka)
+	Series []Series `bson:"series" json:"series"` // Sumbu Y (Data Angka)
+}
+
+type Series struct {
+	Name string    `bson:"name" json:"name"`
+	Data []float64 `bson:"data" json:"data"` // float64 = Support Desimal/Double
 }
 
 type Survey struct {
@@ -20,9 +25,15 @@ type Survey struct {
 	Slug        string             `bson:"slug" json:"slug"` // URL friendly: survei-pilpres-2024
 	Category    string             `bson:"category" json:"category"` // Politik, Ekonomi
 	Description string             `bson:"description" json:"description"` // Ringkasan pendek
+
+	// --- TAMBAHAN BARU (METODOLOGI) ---
+	Methodology string `bson:"methodology" json:"methodology"` // Contoh: Multistage Random Sampling
+	Respondents string `bson:"respondents" json:"respondents"` // Contoh: 1.200 Responden
+	MarginError string `bson:"margin_error" json:"margin_error"` // Contoh: +/- 2.5%
+	Region      string `bson:"region" json:"region"`           // Contoh: 34 Provinsi
 	
 	// Ini bagian kompleks: Data grafik disimpan sebagai Struct di dalam Struct
-	Chart ChartData `bson:"chart_data" json:"chart_data"` 
+	ChartData   ChartData          `bson:"chart_data" json:"chart_data"` 
 
 	CoverImage  string    `bson:"cover_image" json:"cover_image"` // URL Gambar
 	PublishedAt time.Time `bson:"published_at" json:"published_at"`

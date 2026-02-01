@@ -38,7 +38,12 @@ func SetupRoutes(router *gin.Engine) {
 			// CRUD Team (Create)
 			protected.POST("/teams", controllers.CreateTeamMember)
 			
-			// Inbox Admin (Read)
+			// delete surveys
+			protected.DELETE("/surveys/:id", controllers.DeleteSurvey)
+
+			protected.GET("/surveys/id/:id", controllers.GetSurveyById) // Ambil 1 data by ID
+
+    		protected.PUT("/surveys/:id", controllers.UpdateSurvey)  // Update data
 			
 		}
 	}

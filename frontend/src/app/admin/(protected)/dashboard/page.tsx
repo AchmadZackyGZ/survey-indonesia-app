@@ -3,7 +3,21 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/axios"; // Pastikan path axios benar
 import { authService } from "@/services/authService";
-import { BarChart3, FileText, Mail, Loader2, ArrowUpRight, LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  FileText,
+  Mail,
+  Loader2,
+  ArrowUpRight,
+  LucideIcon,
+} from "lucide-react";
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  icon: LucideIcon;
+  color: string;
+}
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -33,7 +47,7 @@ export default function DashboardPage() {
   }, []);
 
   // Komponen Kartu Kecil (Widget)
-  const StatCard = ({ title, value, icon: Icon, color }: any) => (
+  const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => (
     <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100 transition-all hover:shadow-md">
       <div className="flex items-center justify-between">
         <div>

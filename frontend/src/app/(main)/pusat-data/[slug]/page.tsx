@@ -145,26 +145,49 @@ export default function SurveyDetailPage() {
               </div>
 
               {/* Kotak Metodologi Singkat */}
-              <div className="rounded-xl bg-slate-900 border border-slate-800 p-6 mt-6">
-                <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-widest border-b border-slate-800 pb-2">
+              {/* KARTU METODOLOGI (DINAMIS) */}
+              <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                <h3 className="text-white font-bold mb-4 uppercase tracking-wider text-sm border-b border-slate-800 pb-2">
                   Metodologi
-                </h4>
-                <ul className="space-y-3 text-sm text-slate-400">
-                  <li className="flex justify-between">
-                    <span>Metode:</span>
-                    <span className="text-white font-medium">
-                      Multistage Random Sampling
+                </h3>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <span className="block text-slate-500 text-xs mb-1">
+                      Metode Sampling
                     </span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Responden:</span>
-                    <span className="text-white font-medium">1,200 Orang</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Wilayah:</span>
-                    <span className="text-white font-medium">34 Provinsi</span>
-                  </li>
-                </ul>
+                    {/* Tampilkan data dari database, atau fallback jika kosong */}
+                    <span className="text-slate-200 font-medium">
+                      {survey.methodology || "Multistage Random Sampling"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="block text-slate-500 text-xs mb-1">
+                      Responden
+                    </span>
+                    <span className="text-slate-200 font-medium">
+                      {survey.respondents || "Data tidak tersedia"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="block text-slate-500 text-xs mb-1">
+                      Margin of Error
+                    </span>
+                    <span className="text-slate-200 font-medium">
+                      {survey.margin_error || "Data tidak tersedia"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="block text-slate-500 text-xs mb-1">
+                      Wilayah Survei
+                    </span>
+                    <span className="text-slate-200 font-medium">
+                      {survey.region || "Nasional"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

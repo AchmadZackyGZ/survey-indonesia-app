@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/AchmadZackyGZ/survey-backend/config"
@@ -19,41 +20,49 @@ func CreateSurvey(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var survey models.Survey
+	// Gunakan satu variabel saja agar tidak bingung
+	var input models.Survey
 
-	// 1. Validasi JSON yang dikirim user
-	if err := c.BindJSON(&survey); err != nil {
+	// 1. Validasi & Bind JSON yang dikirim Frontend
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 2. Lengkapi data otomatis (ID, Tanggal Dibuat)
-	newSurvey := models.Survey{
-		ID:          primitive.NewObjectID(),
-		Title:       survey.Title,
-		Slug:        survey.Slug,
-		Category:    survey.Category,
-		Description: survey.Description,
-		Chart:       survey.Chart, // Data grafik nested struct
-		CoverImage:  survey.CoverImage,
-		PublishedAt: time.Now(),
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+	// 2. GENERATE SLUG OTOMATIS (Wajib agar detail bisa dibuka)
+	// Jika Slug kosong, kita buat dari Title
+	if input.Slug == "" {
+		slug := strings.ToLower(input.Title)
+		slug = strings.ReplaceAll(slug, " ", "-")
+		// (Opsional) Hapus karakter aneh jika perlu
+		input.Slug = slug
 	}
 
-	// 3. Simpan ke Collection "surveys"
+	// 3. Lengkapi Data System (ID, Tanggal)
+	input.ID = primitive.NewObjectID()
+	input.CreatedAt = time.Now()
+	input.UpdatedAt = time.Now()
+	
+	// Jika PublishedAt belum diisi user, isi dengan waktu sekarang
+	if input.PublishedAt.IsZero() {
+		input.PublishedAt = time.Now()
+	}
+
+	// 4. Simpan ke Database
+	// Kita langsung simpan objek 'input' karena strukturnya sudah sesuai Model
 	collection := config.GetCollection("surveys")
-	result, err := collection.InsertOne(ctx, newSurvey)
+	_, err := collection.InsertOne(ctx, input)
+	
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan data ke database"})
 		return
 	}
 
-	// 4. Berikan respon sukses
+	// 5. Berikan respon sukses
 	c.JSON(http.StatusCreated, gin.H{
 		"status":  "success",
 		"message": "Data survei berhasil dibuat!",
-		"data":    result,
+		"data":    input,
 	})
 }
 
@@ -146,4 +155,83 @@ func GetSurveyBySlug(c *gin.Context) {
 		"status": "success",
 		"data":   survey,
 	})
+}
+
+func DeleteSurvey(c *gin.Context) {
+	surveyId := c.Param("id")
+	objId, _ := primitive.ObjectIDFromHex(surveyId)
+
+	collection := config.GetCollection("surveys")
+	
+    // Coba hapus document
+    res, err := collection.DeleteOne(context.Background(), bson.M{"_id": objId})
+	
+    if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus data"})
+		return
+	}
+
+    if res.DeletedCount == 0 {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Data tidak ditemukan"})
+        return
+    }
+
+	c.JSON(http.StatusOK, gin.H{"message": "Survei berhasil dihapus"})
+}
+
+// 1. GET BY ID (Untuk persiapan Edit)
+func GetSurveyById(c *gin.Context) {
+	surveyId := c.Param("id")
+	objId, _ := primitive.ObjectIDFromHex(surveyId)
+
+	var survey models.Survey
+	collection := config.GetCollection("surveys")
+
+	err := collection.FindOne(context.Background(), bson.M{"_id": objId}).Decode(&survey)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Data tidak ditemukan"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": survey})
+}
+
+// 2. UPDATE SURVEY (Simpan Perubahan)
+func UpdateSurvey(c *gin.Context) {
+	surveyId := c.Param("id")
+	objId, _ := primitive.ObjectIDFromHex(surveyId)
+
+	var input models.Survey
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	collection := config.GetCollection("surveys")
+    
+    // Kita update field yang penting saja
+	update := bson.M{
+		"$set": bson.M{
+			"title":       input.Title,
+			"category":    input.Category,
+			"description": input.Description,
+			"cover_image": input.CoverImage,
+            // Update Metodologi
+            "methodology":  input.Methodology,
+            "respondents":  input.Respondents,
+            "margin_error": input.MarginError,
+            "region":       input.Region,
+            // Update Chart
+			"chart_data":  input.ChartData,
+			"updated_at":  time.Now(),
+		},
+	}
+
+	_, err := collection.UpdateOne(context.Background(), bson.M{"_id": objId}, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengupdate data"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Data berhasil diperbarui!"})
 }

@@ -4,7 +4,12 @@ import { setCookie, deleteCookie, getCookie } from "cookies-next";
 // Interface untuk response login
 interface LoginResponse {
   status: string;
-  token: string;
+  message: string;
+  data: {
+    token: string;
+    name: string;
+    role: string;
+  };
 }
 
 export const authService = {
@@ -15,9 +20,19 @@ export const authService = {
       password,
     });
 
-    // Jika sukses, simpan token ke Cookie (biar aman & persist)
-    if (response.data.token) {
-      setCookie("token", response.data.token, { maxAge: 60 * 60 * 24 }); // Expire 1 hari
+    // --- PERBAIKAN DISINI ---
+    // Masalah Lama: response.data.token (Salah, karena token ada di dalam objek data lagi)
+    // Solusi Baru: response.data.data.token
+
+    if (response.data.data && response.data.data.token) {
+      // Opsi A: Simpan ke Cookie (Jika Anda pakai library cookies-next)
+      // setCookie("token", response.data.data.token, { maxAge: 60 * 60 * 24 });
+      // i choose to use localStorage for simplicity in this project. and also to be consistent with the previous code in layout.tsx
+
+      // Opsi B: Simpan ke LocalStorage (Lebih mudah & sesuai tutorial kita sebelumnya)
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", response.data.data.token);
+      }
     }
 
     return response.data;

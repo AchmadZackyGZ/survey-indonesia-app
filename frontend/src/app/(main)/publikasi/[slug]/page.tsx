@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { publicationService, Publication } from "@/services/publicationService";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, User, Share2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  User,
+  Share2,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 import Link from "next/link";
 
 export default function PublicationDetailPage() {
-  const { slug } = useParams();
+  const { slug } = useParams(); // Mengambil slug dari URL
   const [article, setArticle] = useState<Publication | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -16,10 +23,13 @@ export default function PublicationDetailPage() {
     const fetchData = async () => {
       if (!slug) return;
       try {
+        // Panggil Service getBySlug
         const res = await publicationService.getBySlug(slug as string);
-        if (res.data) setArticle(res.data);
+        if (res.data) {
+          setArticle(res.data);
+        }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error fetching article:", error);
       } finally {
         setLoading(false);
       }
@@ -27,21 +37,36 @@ export default function PublicationDetailPage() {
     fetchData();
   }, [slug]);
 
+  // 1. Loading State
   if (loading)
     return (
-      <div className="min-h-screen bg-navy-950 flex items-center justify-center text-gold">
-        Memuat Artikel...
+      <div className="min-h-screen bg-slate-950 flex flex-col gap-2 items-center justify-center text-gold">
+        <Loader2 className="w-10 h-10 animate-spin" />
+        <p className="text-sm font-medium text-slate-400">Memuat Artikel...</p>
       </div>
     );
+
+  // 2. Not Found State
   if (!article)
     return (
-      <div className="min-h-screen bg-navy-950 flex items-center justify-center text-white">
-        Artikel tidak ditemukan
+      <div className="min-h-screen bg-slate-950 flex flex-col gap-4 items-center justify-center text-white">
+        <AlertTriangle className="w-12 h-12 text-yellow-500" />
+        <div className="text-center">
+          <h2 className="text-xl font-bold">Artikel tidak ditemukan</h2>
+          <p className="text-slate-400 mb-4">
+            Artikel yang Anda cari mungkin telah dihapus atau URL salah.
+          </p>
+          <Link href="/publikasi">
+            <Button className="bg-gold hover:bg-gold-light text-slate-950">
+              Kembali ke Publikasi
+            </Button>
+          </Link>
+        </div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-navy-950 pb-20 pt-8">
+    <div className="min-h-screen bg-slate-950 pb-20 pt-24">
       {/* Back Button */}
       <div className="container mx-auto px-4 md:px-6 mb-8 max-w-4xl">
         <Link href="/publikasi">
@@ -57,17 +82,22 @@ export default function PublicationDetailPage() {
       <article className="container mx-auto px-4 md:px-6 max-w-4xl">
         {/* HEADER ARTIKEL */}
         <header className="mb-10 text-center">
+          {/* Kategori */}
           <span className="inline-block px-4 py-1 mb-6 text-sm font-bold text-slate-950 bg-gold rounded-full uppercase tracking-wider">
-            {article.type}
+            {article.category || "Umum"}
           </span>
+
+          {/* Judul */}
           <h1 className="text-3xl md:text-5xl font-serif font-bold text-white leading-tight mb-6">
             {article.title}
           </h1>
 
+          {/* Meta Info (Tanggal & Penulis) */}
           <div className="flex items-center justify-center gap-6 text-slate-400 text-sm border-y border-slate-800 py-4 max-w-xl mx-auto">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gold" />
-              {new Date(article.published_at).toLocaleDateString("id-ID", {
+              {/* Gunakan created_at karena itu yang disimpan backend */}
+              {new Date(article.created_at).toLocaleDateString("id-ID", {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
@@ -76,28 +106,33 @@ export default function PublicationDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-gold" />
-              {article.author}
+              {article.author || "Admin LSI"}
             </div>
           </div>
         </header>
 
-        {/* FEATURED IMAGE */}
-        <div className="relative aspect-video w-full overflow-hidden rounded-2xl mb-12 border border-slate-800 shadow-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={
-              article.image_url ||
-              "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80"
-            }
-            alt={article.title}
-            className="object-cover w-full h-full"
-          />
+        {/* FEATURED IMAGE (THUMBNAIL) */}
+        <div className="relative aspect-video w-full overflow-hidden rounded-2xl mb-12 border border-slate-800 shadow-2xl bg-slate-900">
+          {article.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={article.thumbnail} // <--- FIX: Gunakan .thumbnail bukan .image_url
+              alt={article.title}
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-slate-700">
+              <span className="italic">Tidak ada gambar</span>
+            </div>
+          )}
         </div>
 
-        {/* ISI KONTEN (Render HTML) */}
+        {/* ISI KONTEN */}
         <div className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed space-y-6">
-          {/* Karena kita menyimpan HTML dari Admin, kita render sebagai HTML */}
-          <div dangerouslySetInnerHTML={{ __html: article.content }} />
+          {/* PENTING: Gunakan 'whitespace-pre-line' agar ENTER/Paragraf dari textarea admin terbaca.
+             Jangan gunakan dangerouslySetInnerHTML kecuali Anda pakai Rich Text Editor.
+          */}
+          <div className="whitespace-pre-line">{article.content}</div>
         </div>
 
         {/* FOOTER ARTIKEL */}
@@ -105,7 +140,7 @@ export default function PublicationDetailPage() {
           <div className="text-slate-500 text-sm">&copy; LSI Research Team</div>
           <Button
             variant="outline"
-            className="border-slate-700 text-slate-700 hover:bg-slate-300"
+            className="border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800"
           >
             <Share2 className="w-4 h-4 mr-2" /> Bagikan
           </Button>

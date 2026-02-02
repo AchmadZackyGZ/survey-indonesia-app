@@ -3,62 +3,64 @@ package controllers
 import (
 	"context"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/AchmadZackyGZ/survey-backend/config"
 	"github.com/AchmadZackyGZ/survey-backend/models"
+	"github.com/AchmadZackyGZ/survey-backend/utils" // <--- 1. WAJIB IMPORT INI
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Kita HAPUS RegisterAdmin dari sini karena sudah via Seeder.
-// Jika nanti butuh register user biasa (public), buat func RegisterUser disini.
+// 2. KITA BUAT STRUCT INPUT DISINI SAJA (Biar tidak error 'undefined')
+type LoginInput struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
 
-// Login: Satu-satunya pintu masuk auth lewat API
 func Login(c *gin.Context) {
-	var input models.User
-	var foundUser models.User
+	var input LoginInput // Gunakan struct LoginInput yang baru kita buat di atas
+	var user models.User
 
-	// 1. Validasi Input
-	if err := c.BindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Format data salah"})
+	// 1. Cek Format JSON
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format data tidak valid"})
 		return
 	}
 
-	// 2. Cari User di DB
+	// 2. Cari User berdasarkan Email
 	collection := config.GetCollection("users")
-	err := collection.FindOne(context.Background(), bson.M{"email": input.Email}).Decode(&foundUser)
+	err := collection.FindOne(context.Background(), bson.M{"email": input.Email}).Decode(&user)
+	
+	if err != nil {
+		// Gunakan 401 (Unauthorized) agar Frontend tahu ini salah password/email
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau password salah"})
+		return
+	}
+
+	// 3. Cek Password (Verify)
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau password salah"})
 		return
 	}
 
-	// 3. Cek Password
-	err = bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(input.Password))
+	// 4. Generate JWT Token
+	// Pastikan function GenerateToken ada di folder utils Anda
+	token, err := utils.GenerateToken(user.ID.Hex(), user.Email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau password salah"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat token"})
 		return
 	}
 
-	// 4. Generate Token (Payload: ID & Role)
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":  foundUser.ID,
-		"role": foundUser.Role, // Simpan role di token biar Frontend tau ini admin/bukan
-		"exp":  time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal generate token"})
-		return
-	}
-
+	// 5. Login Sukses -> Kirim Token
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"token":  tokenString,
-		"role":   foundUser.Role,
+		"message": "Login berhasil",
+		"data": gin.H{
+			"token": token,
+			"name": user.Name, 
+			"role": user.Role,
+		},
 	})
 }

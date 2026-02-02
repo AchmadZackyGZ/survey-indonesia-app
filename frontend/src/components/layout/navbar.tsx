@@ -1,79 +1,117 @@
-"use client"; // <--- WAJIB ADA karena kita pakai hook usePathname
+"use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // Hook untuk cek URL
+import { usePathname } from "next/navigation"; // <--- IMPOR PENTING
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
-  const pathname = usePathname(); // Ambil URL saat ini
+  const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname(); // <--- Ambil URL saat ini
 
-  // Fungsi Helper untuk menentukan style link
-  const getLinkClass = (path: string) => {
-    // Style dasar (transisi halus)
-    const baseStyle = "transition-colors duration-300 hover:text-gold";
+  const toggleMenu = () => setIsOpen(!isOpen);
 
-    // Logika Active State:
-    // 1. Khusus Home ('/'), harus persis sama
-    if (path === "/" && pathname === "/") {
-      return `${baseStyle} text-gold font-bold`;
+  const navLinks = [
+    { name: "Beranda", href: "/" },
+    { name: "Hasil Survei", href: "/pusat-data" },
+    { name: "Publikasi", href: "/publikasi" },
+    { name: "Tentang Kami", href: "/tentang-kami" },
+  ];
+
+  // Fungsi Cek Apakah Link Aktif
+  const isActive = (path: string) => {
+    if (path === "/") {
+      return pathname === "/"; // Khusus Beranda harus sama persis
     }
-
-    // 2. Halaman lain, cek apakah URL diawali dengan path link (agar sub-menu tetap aktif)
-    // Contoh: buka /pusat-data/detail, menu /pusat-data tetap nyala
-    if (path !== "/" && pathname.startsWith(path)) {
-      return `${baseStyle} text-gold font-bold`;
-    }
-
-    // 3. Jika tidak aktif, warna abu-abu
-    return `${baseStyle} text-slate-300`;
+    return pathname.startsWith(path); // Halaman lain (misal /pusat-data/slug) tetap dianggap aktif
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/80 backdrop-blur-md supports-[backdrop-filter]:bg-slate-950/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        {/* LOGO AREA */}
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex flex-col leading-none group">
-            <span className="font-serif text-xl font-bold tracking-wide text-white group-hover:text-gold transition-colors">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-slate-900 shadow-md">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex h-20 items-center justify-between">
+          {/* LOGO */}
+          <Link
+            href="/"
+            className="flex flex-col group"
+            onClick={() => setIsOpen(false)}
+          >
+            <span className="text-2xl font-serif font-bold text-white tracking-wide group-hover:text-gold transition-colors">
               LSI
             </span>
-            <span className="text-[10px] font-medium uppercase tracking-widest text-gold-light group-hover:text-white transition-colors">
+            <span className="text-[10px] text-gold font-medium tracking-[0.2em] uppercase">
               Lembaga Survei Indonesia
             </span>
           </Link>
+
+          {/* DESKTOP MENU */}
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`text-sm font-medium transition-colors relative group ${
+                  isActive(link.href)
+                    ? "text-gold font-bold" // Kalo Aktif: Warna Emas
+                    : "text-slate-300 hover:text-gold" // Kalo Tidak: Putih Abu
+                }`}
+              >
+                {link.name}
+                {/* Garis Bawah (Underline) */}
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 bg-gold transition-all ${
+                    isActive(link.href) ? "w-full" : "w-0 group-hover:w-full"
+                  }`}
+                ></span>
+              </Link>
+            ))}
+            <Link href="/hubungi-kami">
+              <Button className="bg-gold hover:bg-gold-light text-slate-950 font-bold px-6">
+                Hubungi Kami
+              </Button>
+            </Link>
+          </div>
+
+          {/* MOBILE TOGGLE BUTTON */}
+          <button
+            className="md:hidden p-2 text-slate-300 hover:text-white focus:outline-none"
+            onClick={toggleMenu}
+          >
+            {isOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
+          </button>
         </div>
-
-        {/* DESKTOP MENU */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-          <Link href="/" className={getLinkClass("/")}>
-            Beranda
-          </Link>
-          <Link href="/pusat-data" className={getLinkClass("/pusat-data")}>
-            Hasil Survei
-          </Link>
-          <Link href="/publikasi" className={getLinkClass("/publikasi")}>
-            Publikasi
-          </Link>
-          <Link href="/tentang-kami" className={getLinkClass("/tentang-kami")}>
-            Tentang Kami
-          </Link>
-        </nav>
-
-        {/* ACTION BUTTON */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link href="/kontak">
-            <Button className="bg-gold hover:bg-gold-light text-slate-950 font-bold px-6 transition-all hover:scale-105">
-              Hubungi Kami
-            </Button>
-          </Link>
-        </div>
-
-        {/* MOBILE MENU TOGGLE */}
-        <button className="md:hidden text-white hover:text-gold transition-colors">
-          <Menu className="h-6 w-6" />
-        </button>
       </div>
-    </header>
+
+      {/* MOBILE MENU CONTENT */}
+      {isOpen && (
+        <div className="md:hidden bg-slate-950 border-b border-slate-800 absolute w-full left-0 top-20 shadow-2xl animate-in slide-in-from-top-5">
+          <div className="flex flex-col p-6 space-y-4">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`text-lg font-medium transition-all border-b border-slate-900 pb-2 ${
+                  isActive(link.href)
+                    ? "text-gold pl-2 border-l-4 border-l-gold bg-slate-900" // Aktif di HP
+                    : "text-slate-300 hover:text-gold hover:pl-2"
+                }`}
+                onClick={() => setIsOpen(false)}
+              >
+                {link.name}
+              </Link>
+            ))}
+
+            <div className="pt-2">
+              <Link href="/hubungi-kami" onClick={() => setIsOpen(false)}>
+                <Button className="w-full bg-gold hover:bg-gold-light text-slate-950 font-bold h-12 text-lg">
+                  Hubungi Kami
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+    </nav>
   );
 }

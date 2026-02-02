@@ -44,7 +44,13 @@ func SetupRoutes(router *gin.Engine) {
 			protected.GET("/surveys/id/:id", controllers.GetSurveyById) // Ambil 1 data by ID
 
     		protected.PUT("/surveys/:id", controllers.UpdateSurvey)  // Update data
+
+			// delete publications
+			protected.DELETE("/publications/:id", controllers.DeletePublication)
 			
+			protected.GET("/publications/id/:id", controllers.GetPublicationById) // Khusus Admin ambil by ID
+			
+			protected.PUT("/publications/:id", controllers.UpdatePublication)     // Update
 		}
 	}
 }

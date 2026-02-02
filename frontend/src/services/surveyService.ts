@@ -33,6 +33,7 @@ export interface Survey {
   methodology: string;
   respondents: string;
   margin_error: string;
+  created_at: string;
   region: string;
   chart_data: ChartData; // Re-use interface ChartData
   cover_image?: string; // Gunakan '?' (Optional) karena form create kita belum ada upload gambar

@@ -1,28 +1,59 @@
 import axios from "axios";
-import { getCookie } from "cookies-next";
 
-// Ambil URL dari .env atau fallback ke localhost
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-
+// Buat instance Axios
 const api = axios.create({
-  baseURL,
+  // Pastikan port sesuai backend Go Anda (biasanya 8080)
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Interceptor: Setiap request keluar, otomatis tempel token jika ada
+// =================================================================
+// 1. REQUEST INTERCEPTOR (Penyisip Token)
+// =================================================================
+// Setiap kali mau request (GET/POST/PUT/DELETE), fungsi ini jalan duluan.
 api.interceptors.request.use(
   (config) => {
-    const token = getCookie("token");
+    // Cek apakah kita ada di browser (bukan server side)
+    if (typeof window !== "undefined") {
+      // Ambil token dari brankas LocalStorage
+      const token = localStorage.getItem("token");
 
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
+      if (token) {
+        // SISIPKAN TOKEN KE HEADER!
+        // Backend Go akan mengecek header "Authorization" ini
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
-
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    return Promise.reject(error);
+  },
+);
+
+// =================================================================
+// 2. RESPONSE INTERCEPTOR (Penanganan Error Otomatis)
+// =================================================================
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Jika Backend membalas "401 Unauthorized" (Token Basi/Palsu)
+    if (error.response && error.response.status === 401) {
+      console.error("Sesi habis atau token tidak valid. Logout otomatis...");
+
+      if (typeof window !== "undefined") {
+        // Hapus token sampah
+        localStorage.removeItem("token");
+        localStorage.removeItem("adminName");
+
+        // Tendang balik ke halaman login (opsional, tapi disarankan)
+        // window.location.href = "/admin/login";
+      }
+    }
+    return Promise.reject(error);
+  },
 );
 
 export default api;

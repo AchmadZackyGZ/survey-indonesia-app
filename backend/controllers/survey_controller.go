@@ -41,7 +41,7 @@ func CreateSurvey(c *gin.Context) {
 	// 4. Default Thumbnail jika kosong
     if input.Thumbnail == "" {
         // Optional: Set default image URL jika user tidak upload
-        input.Thumbnail = "https://via.placeholder.com/300x200?text=Default+Thumbnail"
+        input.Thumbnail = "https://placehold.co/600x400/EEE/31343C?text=No+Image"
     }
 
 	// 3. Lengkapi Data System (ID, Tanggal)
@@ -221,7 +221,7 @@ func UpdateSurvey(c *gin.Context) {
 			"title":       input.Title,
 			"category":    input.Category,
 			"description": input.Description,
-			"cover_image": input.CoverImage,
+			"thumbnail":   input.Thumbnail,
             // Update Metodologi
             "methodology":  input.Methodology,
             "respondents":  input.Respondents,

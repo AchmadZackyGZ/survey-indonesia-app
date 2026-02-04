@@ -25,7 +25,6 @@ export default function CreateSurveyPage() {
     title: "",
     category: "Politik",
     description: "",
-    cover_image: "",
     thumbnail: "",
     methodology: "Multistage Random Sampling", // Default
     respondents: "1200",
@@ -57,8 +56,8 @@ export default function CreateSurveyPage() {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        // Simpan hasil konversi gambar ke state cover_image
-        setFormData({ ...formData, cover_image: reader.result as string });
+        // Simpan hasil konversi gambar ke state thumbnail
+        setFormData({ ...formData, thumbnail: reader.result as string });
       };
       reader.readAsDataURL(file);
     }
@@ -66,7 +65,7 @@ export default function CreateSurveyPage() {
 
   // Hapus Gambar
   const removeImage = () => {
-    setFormData({ ...formData, cover_image: "" });
+    setFormData({ ...formData, thumbnail: "" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,7 +84,7 @@ export default function CreateSurveyPage() {
         title: formData.title,
         category: formData.category,
         description: formData.description,
-        cover_image: formData.cover_image || undefined,
+        thumbnail: formData.thumbnail || undefined,
         methodology: formData.methodology,
         respondents: formData.respondents,
         margin_error: formData.margin_error,
@@ -211,7 +210,7 @@ export default function CreateSurveyPage() {
           <div>
             <label className={labelStyle}>Gambar Cover (Opsional)</label>
 
-            {!formData.cover_image ? (
+            {!formData.thumbnail ? (
               // Tampilan Belum Upload
               <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:bg-slate-50 transition-colors cursor-pointer relative group">
                 <input
@@ -237,7 +236,7 @@ export default function CreateSurveyPage() {
               <div className="relative w-full h-64 rounded-xl overflow-hidden border border-slate-200 group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={formData.cover_image}
+                  src={formData.thumbnail}
                   alt="Preview"
                   className="w-full h-full object-cover"
                 />

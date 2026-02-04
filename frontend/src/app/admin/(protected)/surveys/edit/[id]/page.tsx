@@ -29,7 +29,7 @@ export default function EditSurveyPage() {
     title: "",
     category: "Politik",
     description: "",
-    cover_image: "",
+    thumbnail: "",
     methodology: "",
     respondents: "",
     margin_error: "",
@@ -55,7 +55,7 @@ export default function EditSurveyPage() {
           title: data.title || "",
           category: data.category || "Politik",
           description: data.description || "",
-          cover_image: data.cover_image || "",
+          thumbnail: data.thumbnail || "",
           methodology: data.methodology || "",
           respondents: data.respondents || "",
           margin_error: data.margin_error || "",
@@ -92,13 +92,13 @@ export default function EditSurveyPage() {
       if (file.size > 2 * 1024 * 1024) return alert("Max 2MB");
       const reader = new FileReader();
       reader.onloadend = () =>
-        setFormData({ ...formData, cover_image: reader.result as string });
+        setFormData({ ...formData, thumbnail: reader.result as string });
       reader.readAsDataURL(file);
     }
   };
 
   const removeImage = () => {
-    setFormData({ ...formData, cover_image: "" });
+    setFormData({ ...formData, thumbnail: "" });
   };
 
   // 2. HANDLE UPDATE
@@ -118,7 +118,7 @@ export default function EditSurveyPage() {
         title: formData.title,
         category: formData.category,
         description: formData.description,
-        cover_image: formData.cover_image,
+        thumbnail: formData.thumbnail || undefined,
         methodology: formData.methodology,
         respondents: formData.respondents,
         margin_error: formData.margin_error,
@@ -242,7 +242,7 @@ export default function EditSurveyPage() {
           {/* Upload Image */}
           <div>
             <label className={labelStyle}>Gambar Cover (Opsional)</label>
-            {!formData.cover_image ? (
+            {!formData.thumbnail ? (
               <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:bg-slate-50 transition-colors cursor-pointer relative group">
                 <input
                   type="file"
@@ -259,7 +259,7 @@ export default function EditSurveyPage() {
               <div className="relative w-full h-64 rounded-xl overflow-hidden border border-slate-200 group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={formData.cover_image}
+                  src={formData.thumbnail}
                   className="w-full h-full object-cover"
                   alt="preview"
                 />

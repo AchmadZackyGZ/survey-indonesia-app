@@ -36,7 +36,6 @@ type Survey struct {
 	// Ini bagian kompleks: Data grafik disimpan sebagai Struct di dalam Struct
 	ChartData   ChartData          `bson:"chart_data" json:"chart_data"` 
 
-	CoverImage  string    `bson:"cover_image" json:"cover_image"` // URL Gambar
 	PublishedAt time.Time `bson:"published_at" json:"published_at"`
 	CreatedAt   time.Time `bson:"created_at" json:"created_at"`
 	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at"`

@@ -1,121 +1,126 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { publicationService, Publication } from "@/services/publicationService";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, User } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
+import { Calendar, User, ArrowRight, FileText } from "lucide-react";
 
 export default function LatestPublications() {
-  const [news, setNews] = useState<Publication[]>([]);
+  const [latestData, setLatestData] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchLatest = async () => {
       try {
         const res = await publicationService.getLatest();
-        if (res.data) {
-          setNews(res.data);
-        }
+        setLatestData(res.data || []);
       } catch (error) {
-        console.error("Gagal ambil berita:", error);
+        console.error(error);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchData();
+    fetchLatest();
   }, []);
 
-  if (loading) return null; // Tidak perlu loading spinner disini biar clean, tunggu muncul saja
-  if (news.length === 0) return null;
+  if (loading || latestData.length === 0) return null;
 
   return (
-    <section className="py-24 bg-navy-950 border-t border-slate-900 relative">
+    <section className="py-24 bg-slate-950 border-t border-slate-900">
       <div className="container mx-auto px-4 md:px-6">
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-3">
-              Analisis & Publikasi
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+          <div className="max-w-2xl">
+            <span className="text-gold font-bold tracking-widest text-xs uppercase mb-2 block">
+              Update Terkini
+            </span>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-4 leading-tight">
+              Analisis & Publikasi Pilihan
             </h2>
-            <p className="text-slate-400 max-w-xl text-lg">
-              Perspektif mendalam dari para pakar kami mengenai dinamika sosial
-              politik terkini.
+            <p className="text-slate-400 text-lg">
+              Perspektif mendalam dari para pakar kami mengenai isu-isu
+              strategis nasional.
             </p>
           </div>
           <Link href="/publikasi">
             <Button
-              variant="ghost"
-              className="text-gold hover:text-white hover:bg-slate-800 -ml-4 md:ml-0"
+              variant="outline"
+              className="h-12 px-6 border-slate-700 bg-slate-900/50 text-slate-300 hover:bg-gold hover:text-slate-950 hover:border-gold transition-all duration-300"
             >
-              Baca Selengkapnya <ArrowRight className="ml-2 h-4 w-4" />
+              Lihat Semua Publikasi
             </Button>
           </Link>
         </div>
 
-        {/* NEWS GRID */}
-        <div className="grid gap-8 md:grid-cols-3">
-          {news.map((item, index) => (
-            <Link
+        {/* Grid Artikel Terbaru */}
+        <div className="grid md:grid-cols-3 gap-8">
+          {latestData.map((item) => (
+            <div
               key={item.id}
-              href={`/publikasi/${item.slug}`}
-              className="group"
+              className="group bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 hover:border-gold/50 transition-all duration-300 flex flex-col"
             >
-              <article className="flex flex-col h-full bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 transition-all duration-300 hover:border-gold/50 hover:shadow-2xl hover:shadow-gold/5 hover:-translate-y-2">
-                {/* Image Placeholder / Real Image */}
-                <div className="relative h-56 w-full overflow-hidden bg-slate-800">
-                  {/* Menggunakan img tag biasa agar tidak ribet config hostname Next.js dulu */}
+              {/* Image Area */}
+              <div className="relative h-52 w-full overflow-hidden bg-slate-800">
+                <span className="absolute top-4 left-4 bg-slate-950/90 border border-slate-700 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider z-10">
+                  {item.category || "TERBARU"}
+                </span>
 
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={
-                      item.image_url ||
-                      "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600&auto=format&fit=crop"
-                    }
-                    alt={item.title}
-                    className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 text-xs font-bold text-slate-950 bg-gold rounded-full uppercase tracking-wider">
-                      {item.type}
+                <Link href={`/publikasi/${item.slug}`}>
+                  {item.thumbnail ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.thumbnail}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-600 bg-slate-800/50">
+                      <FileText className="w-10 h-10" />
+                    </div>
+                  )}
+                </Link>
+              </div>
+
+              {/* Content Area */}
+              <div className="p-6 flex flex-col flex-1 border-t border-slate-800">
+                <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-gold" />
+                    {new Date(item.created_at).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </div>
+                  <div className="w-1 h-1 rounded-full bg-slate-700" />
+                  <div className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-gold" />
+                    <span className="truncate max-w-[80px]">
+                      {item.author || "Admin"}
                     </span>
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="flex flex-col flex-1 p-6">
-                  <div className="flex items-center gap-4 text-xs text-slate-400 mb-4">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-gold" />
-                      {new Date(item.published_at).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <User className="w-3 h-3 text-gold" />
-                      {item.author}
-                    </div>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-white mb-3 line-clamp-2 leading-snug group-hover:text-gold transition-colors">
+                <Link href={`/publikasi/${item.slug}`}>
+                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-gold transition-colors leading-snug">
                     {item.title}
                   </h3>
+                </Link>
 
-                  {/* Kita render HTML content sedikit saja sebagai excerpt, lalu strip tag HTML-nya */}
-                  <div className="text-slate-400 text-sm line-clamp-3 mb-6 flex-1">
-                    {item.content.replace(/<[^>]*>?/gm, "")}
-                  </div>
+                <p className="text-slate-400 text-sm line-clamp-2 mb-4 flex-1">
+                  {item.content.replace(/<[^>]*>?/gm, "").substring(0, 100)}...
+                </p>
 
-                  <div className="flex items-center text-sm font-medium text-gold mt-auto group-hover:underline decoration-gold/50 underline-offset-4">
-                    Baca Artikel
-                  </div>
-                </div>
-              </article>
-            </Link>
+                <Link
+                  href={`/publikasi/${item.slug}`}
+                  className="mt-auto inline-flex items-center text-sm text-gold font-medium hover:underline group/link"
+                >
+                  Baca Selengkapnya{" "}
+                  <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       </div>

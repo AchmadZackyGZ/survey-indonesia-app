@@ -38,6 +38,12 @@ func CreateSurvey(c *gin.Context) {
 		input.Slug = slug
 	}
 
+	// 4. Default Thumbnail jika kosong
+    if input.Thumbnail == "" {
+        // Optional: Set default image URL jika user tidak upload
+        input.Thumbnail = "https://via.placeholder.com/300x200?text=Default+Thumbnail"
+    }
+
 	// 3. Lengkapi Data System (ID, Tanggal)
 	input.ID = primitive.NewObjectID()
 	input.CreatedAt = time.Now()

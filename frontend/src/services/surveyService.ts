@@ -37,6 +37,7 @@ export interface Survey {
   region: string;
   chart_data: ChartData; // Re-use interface ChartData
   cover_image?: string; // Gunakan '?' (Optional) karena form create kita belum ada upload gambar
+  thumbnail?: string;
 }
 
 export const surveyService = {

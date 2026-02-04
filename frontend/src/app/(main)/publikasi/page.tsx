@@ -1,152 +1,188 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { publicationService, Publication } from "@/services/publicationService";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Calendar, User, Loader2 } from "lucide-react";
-import Link from "next/link";
+import {
+  Calendar,
+  User,
+  ArrowRight,
+  Loader2,
+  FileText,
+  Search,
+  Filter,
+} from "lucide-react";
 
-export default function PublikasiPage() {
-  const [news, setNews] = useState<Publication[]>([]);
+export default function PublicPublicationsPage() {
+  const [publications, setPublications] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Pagination State
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        const res = await publicationService.getAll(page, 9); // Load 9 berita per halaman
-        if (res.data && res.data.length > 0) {
-          setNews(res.data);
-          setHasMore(res.data.length === 9);
-        } else {
-          setNews([]);
-          setHasMore(false);
-        }
+        const res = await publicationService.getAll();
+        setPublications(res.data || []);
       } catch (error) {
-        console.error("Gagal ambil berita:", error);
+        console.error("Gagal memuat publikasi:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
-  }, [page]);
+  }, []);
+
+  // Filter Search
+  const filteredData = publications.filter((item) =>
+    item.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col gap-3 items-center justify-center text-gold">
+        <Loader2 className="w-10 h-10 animate-spin" />
+        <p className="text-slate-400 text-sm animate-pulse">
+          Memuat Data Publikasi...
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-navy-950 pb-20 pt-10">
+    <div className="min-h-screen bg-slate-950 pt-24 pb-20">
       <div className="container mx-auto px-4 md:px-6">
-        {/* HEADER */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-serif font-bold text-white mb-4">
-            Publikasi & Analisis
-          </h1>
-          <p className="text-slate-400 max-w-2xl mx-auto">
-            Kumpulan artikel, opini, dan rilis pers terbaru dari tim peneliti
-            kami.
-          </p>
+        {/* --- HEADER SECTION --- */}
+        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 border-b border-slate-800 pb-8">
+          <div className="max-w-2xl">
+            <span className="text-gold font-bold tracking-widest text-xs uppercase mb-2 block">
+              Wawasan & Analisis
+            </span>
+            <h1 className="text-3xl md:text-5xl font-serif font-bold text-white leading-tight">
+              Publikasi Terbaru
+            </h1>
+            <p className="text-slate-400 mt-4 text-lg">
+              Temukan artikel, opini pakar, dan rilis pers mendalam mengenai
+              dinamika sosial-politik Indonesia.
+            </p>
+          </div>
+
+          {/* SEARCH BAR */}
+          <div className="w-full md:w-auto relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-500 group-focus-within:text-gold transition-colors" />
+            </div>
+            <input
+              type="text"
+              placeholder="Cari topik..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full md:w-64 bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-full py-3 pl-10 pr-4 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all"
+            />
+          </div>
         </div>
 
-        {/* LOADING */}
-        {loading && (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-10 w-10 animate-spin text-gold" />
-          </div>
-        )}
-
-        {/* GRID BERITA */}
-        {!loading && (
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {news.map((item) => (
-              <Link
+        {/* --- GRID ARTIKEL --- */}
+        {filteredData.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredData.map((item) => (
+              <div
                 key={item.id}
-                href={`/publikasi/${item.slug}`}
-                className="group h-full"
+                className="group bg-slate-900/50 rounded-2xl overflow-hidden border border-slate-800 hover:border-gold/50 transition-all duration-300 flex flex-col hover:shadow-2xl hover:shadow-gold/5"
               >
-                <article className="flex flex-col h-full bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 transition-all duration-300 hover:border-gold/50 hover:shadow-2xl hover:shadow-gold/5 hover:-translate-y-2">
-                  {/* Image */}
-                  <div className="relative h-48 w-full overflow-hidden bg-slate-800">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={
-                        item.image_url ||
-                        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80"
-                      }
-                      alt={item.title}
-                      className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 text-xs font-bold text-slate-950 bg-gold rounded-full uppercase tracking-wider">
-                        {item.type}
+                {/* 1. THUMBNAIL AREA */}
+                <div className="relative h-52 w-full overflow-hidden bg-slate-900">
+                  {/* Badge Kategori */}
+                  <span className="absolute top-4 left-4 bg-slate-950/80 backdrop-blur border border-slate-700 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider z-20">
+                    {item.category || "UMUM"}
+                  </span>
+
+                  <Link href={`/publikasi/${item.slug}`}>
+                    {item.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.thumbnail}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out opacity-90 group-hover:opacity-100"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-slate-800/50">
+                        <FileText className="w-12 h-12 mb-2 opacity-50" />
+                        <span className="text-xs">No Image</span>
+                      </div>
+                    )}
+                    {/* Overlay Gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
+                  </Link>
+                </div>
+
+                {/* 2. KONTEN AREA */}
+                <div className="p-6 flex flex-col flex-1 border-t border-slate-800/50">
+                  {/* Meta Info */}
+                  <div className="flex items-center gap-4 text-xs text-slate-500 mb-4">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-gold" />
+                      {new Date(item.created_at).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </div>
+                    <div className="w-1 h-1 rounded-full bg-slate-700" />
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-gold" />
+                      <span className="truncate max-w-[100px]">
+                        {item.author || "Admin LSI"}
                       </span>
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="flex flex-col flex-1 p-6">
-                    <div className="flex items-center gap-4 text-xs text-slate-400 mb-3">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-gold" />
-                        {new Date(item.published_at).toLocaleDateString(
-                          "id-ID",
-                          {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          },
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <User className="w-3 h-3 text-gold" />
-                        {item.author}
-                      </div>
-                    </div>
-
-                    <h3 className="text-xl font-bold text-white mb-3 line-clamp-2 leading-snug group-hover:text-gold transition-colors">
+                  {/* Judul */}
+                  <Link href={`/publikasi/${item.slug}`} className="block mb-3">
+                    <h3 className="text-xl font-bold text-white leading-snug group-hover:text-gold transition-colors line-clamp-2">
                       {item.title}
                     </h3>
+                  </Link>
 
-                    {/* Excerpt (Strip HTML tags simple way) */}
-                    <p className="text-slate-400 text-sm line-clamp-3 mb-4 flex-1">
-                      {item.content.replace(/<[^>]*>?/gm, "")}
-                    </p>
+                  {/* Excerpt / Cuplikan */}
+                  <p className="text-slate-400 text-sm line-clamp-3 mb-6 flex-1 leading-relaxed">
+                    {item.content.replace(/<[^>]*>?/gm, "").substring(0, 140)}
+                    ...
+                  </p>
 
-                    <span className="text-sm font-medium text-gold mt-auto group-hover:underline decoration-gold/50 underline-offset-4">
-                      Baca Selengkapnya &rarr;
-                    </span>
-                  </div>
-                </article>
-              </Link>
+                  {/* Tombol Baca */}
+                  <Link href={`/publikasi/${item.slug}`} className="mt-auto">
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-gold hover:text-white transition-colors group/btn font-medium text-sm"
+                    >
+                      Baca Selengkapnya
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
-        )}
-
-        {/* PAGINATION */}
-        {!loading && news.length > 0 && (
-          <div className="mt-16 flex justify-center items-center gap-4">
+        ) : (
+          /* EMPTY STATE */
+          <div className="flex flex-col items-center justify-center py-24 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800 text-center">
+            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+              <Search className="w-8 h-8 text-slate-600" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">
+              Tidak ditemukan
+            </h3>
+            <p className="text-slate-400 max-w-md">
+              Maaf, kami tidak menemukan artikel dengan kata kunci
+              {searchQuery}. Coba kata kunci lain.
+            </p>
             <Button
+              onClick={() => setSearchQuery("")}
               variant="outline"
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="border-slate-700 bg-transparent text-white hover:bg-slate-800 disabled:opacity-50"
+              className="mt-6 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" /> Sebelumnya
-            </Button>
-
-            <span className="text-slate-400 font-mono text-sm">
-              Hal. {page}
-            </span>
-
-            <Button
-              variant="outline"
-              disabled={!hasMore}
-              onClick={() => setPage((p) => p + 1)}
-              className="border-slate-700 bg-transparent text-white hover:bg-slate-800 disabled:opacity-50"
-            >
-              Selanjutnya <ArrowRight className="ml-2 h-4 w-4" />
+              Reset Pencarian
             </Button>
           </div>
         )}

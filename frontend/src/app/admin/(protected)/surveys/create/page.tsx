@@ -26,6 +26,7 @@ export default function CreateSurveyPage() {
     category: "Politik",
     description: "",
     cover_image: "",
+    thumbnail: "",
     methodology: "Multistage Random Sampling", // Default
     respondents: "1200",
     margin_error: "2.9%",

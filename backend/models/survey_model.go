@@ -31,6 +31,7 @@ type Survey struct {
 	Respondents string `bson:"respondents" json:"respondents"` // Contoh: 1.200 Responden
 	MarginError string `bson:"margin_error" json:"margin_error"` // Contoh: +/- 2.5%
 	Region      string `bson:"region" json:"region"`           // Contoh: 34 Provinsi
+	Thumbnail   string             `bson:"thumbnail" json:"thumbnail"`
 	
 	// Ini bagian kompleks: Data grafik disimpan sebagai Struct di dalam Struct
 	ChartData   ChartData          `bson:"chart_data" json:"chart_data"` 

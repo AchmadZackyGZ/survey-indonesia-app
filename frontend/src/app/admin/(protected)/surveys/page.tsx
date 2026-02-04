@@ -11,7 +11,6 @@ import {
   Trash2,
   Eye,
   Loader2,
-  Calendar,
   BarChart3,
   AlertCircle,
 } from "lucide-react";
@@ -21,7 +20,6 @@ export default function SurveysPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 1. Fetch Data
   const loadSurveys = async () => {
     try {
       const res = await surveyService.getAll();
@@ -37,15 +35,13 @@ export default function SurveysPage() {
     loadSurveys();
   }, []);
 
-  // 2. Handle Delete
   const handleDelete = async (id: string) => {
     if (confirm("Apakah Anda yakin ingin menghapus survei ini?")) {
       await surveyService.deleteSurvey(id);
-      loadSurveys(); // Reload data
+      loadSurveys();
     }
   };
 
-  // 3. Filter Search
   const filteredSurveys = surveys.filter((item) =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
@@ -60,7 +56,7 @@ export default function SurveysPage() {
 
   return (
     <div className="space-y-6 pb-20">
-      {/* --- HEADER SECTION --- */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Data Survei</h1>
@@ -75,7 +71,7 @@ export default function SurveysPage() {
         </Link>
       </div>
 
-      {/* --- SEARCH BAR --- */}
+      {/* SEARCH BAR */}
       <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -89,7 +85,7 @@ export default function SurveysPage() {
         </div>
       </div>
 
-      {/* --- KONDISI JIKA DATA KOSONG --- */}
+      {/* EMPTY STATE */}
       {filteredSurveys.length === 0 && (
         <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
           <div className="bg-slate-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -101,14 +97,13 @@ export default function SurveysPage() {
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* TAMPILAN 1: TABLE VIEW (Hanya muncul di DESKTOP / MD+)  */}
-      {/* ========================================================= */}
+      {/* TABLE VIEW (DESKTOP) - SUDAH DITAMBAHKAN KOLOM GAMBAR */}
       <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider text-xs font-semibold">
             <tr>
               <th className="p-4 w-16 text-center">No</th>
+              <th className="p-4 w-24">Cover</th>
               <th className="p-4">Judul Survei</th>
               <th className="p-4 w-32">Kategori</th>
               <th className="p-4 w-40">Tanggal</th>
@@ -122,6 +117,22 @@ export default function SurveysPage() {
                 className="hover:bg-slate-50 transition-colors group"
               >
                 <td className="p-4 text-center text-slate-400">{index + 1}</td>
+                <td className="p-4">
+                  <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
+                    {item.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.thumbnail}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400">
+                        <BarChart3 className="w-5 h-5" />
+                      </div>
+                    )}
+                  </div>
+                </td>
                 <td className="p-4">
                   <p className="font-bold text-slate-800 line-clamp-1">
                     {item.title}
@@ -143,7 +154,7 @@ export default function SurveysPage() {
                   })}
                 </td>
                 <td className="p-4 text-right">
-                  <div className="flex items-center justify-end gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center justify-end gap-2">
                     <Link href={`/pusat-data/${item.slug}`} target="_blank">
                       <Button
                         variant="ghost"
@@ -178,17 +189,29 @@ export default function SurveysPage() {
         </table>
       </div>
 
-      {/* ========================================================= */}
-      {/* TAMPILAN 2: CARD VIEW (Hanya muncul di MOBILE / < MD)    */}
-      {/* ========================================================= */}
+      {/* CARD VIEW (MOBILE) */}
       <div className="md:hidden grid gap-4">
         {filteredSurveys.map((item) => (
           <div
             key={item.id}
             className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4"
           >
-            {/* Header Card */}
-            <div className="flex justify-between items-start gap-3">
+            <div className="flex gap-4">
+              {/* Gambar di Mobile */}
+              <div className="w-20 h-20 flex-shrink-0 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
+                {item.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.thumbnail}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                    <BarChart3 className="w-6 h-6" />
+                  </div>
+                )}
+              </div>
               <div>
                 <span className="inline-block px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-[10px] font-bold uppercase tracking-wide mb-2">
                   {item.category}
@@ -199,21 +222,6 @@ export default function SurveysPage() {
               </div>
             </div>
 
-            {/* Info Baris */}
-            <div className="flex items-center gap-4 text-xs text-slate-500 border-t border-slate-100 pt-3">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" />
-                {new Date(item.created_at).toLocaleDateString("id-ID")}
-              </div>
-              {item.respondents && (
-                <div className="flex items-center gap-1.5">
-                  <BarChart3 className="w-3.5 h-3.5" />
-                  {item.respondents}
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons (Full Width biar gampang dipencet di HP) */}
             <div className="grid grid-cols-3 gap-2 pt-1">
               <Link href={`/pusat-data/${item.slug}`} className="w-full">
                 <Button

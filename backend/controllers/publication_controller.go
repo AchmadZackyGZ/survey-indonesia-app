@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // CreatePublication: Tambah berita baru
@@ -70,10 +73,44 @@ func GetAllPublications(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var pubs []models.Publication
+	var publications []models.Publication
 	collection := config.GetCollection("publications")
 
-	cursor, err := collection.Find(ctx, map[string]interface{}{})
+	// 1. Validasi Page
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Page harus angka positif"})
+		return
+	}
+
+	// 2. Validasi Limit
+	limitStr := c.DefaultQuery("limit", "9") // Default 9 agar rapi di grid 3x3
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Limit harus angka positif"})
+		return
+	}
+
+	// --- 3. LOGIC PENCARIAN (SEARCH) ---
+	searchQuery := c.Query("search")
+	filter := bson.M{}
+
+	if searchQuery != "" {
+		filter = bson.M{
+			"title": bson.M{"$regex": searchQuery, "$options": "i"},
+		}
+	}
+
+	// 4. Pagination Options
+	skip := (page - 1) * limit
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "created_at", Value: -1}}) // Terbaru diatas
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSkip(int64(skip))
+
+	// 5. Eksekusi Query
+	cursor, err := collection.Find(ctx, filter, findOptions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data"})
 		return
@@ -82,11 +119,30 @@ func GetAllPublications(c *gin.Context) {
 
 	for cursor.Next(ctx) {
 		var pub models.Publication
-		cursor.Decode(&pub)
-		pubs = append(pubs, pub)
+		if err := cursor.Decode(&pub); err != nil {
+			fmt.Println("❌ Error Decode Pub:", err)
+			continue
+		}
+		publications = append(publications, pub)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": pubs})
+	if publications == nil {
+		publications = []models.Publication{}
+	}
+
+	// 6. Hitung Total Data (Sesuai Filter)
+	total, _ := collection.CountDocuments(ctx, filter)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   publications,
+		"meta": gin.H{
+			"page":        page,
+			"limit":       limit,
+			"total_data":  total,
+			"total_pages": (total + int64(limit) - 1) / int64(limit),
+		},
+	})
 }
 
 // GetPublicationBySlug: Baca satu berita detail

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -103,6 +104,18 @@ func GetAllSurveys(c *gin.Context) {
         return
     }
 
+	// logic pencarian 
+	searchQuery := c.Query("search") // Ambil query parameter 'search'
+	filter := bson.M{} // default filter kosong (ambil semua data)
+
+	if searchQuery != "" {
+		// Jika ada kata kunci pencarian, buat filter dengan regex (case-insensitive)
+		filter = bson.M{
+			// Cari di field 'title' yang mengandung kata kunci (Case Insensitive 'i')
+			"title": bson.M{"$regex": searchQuery, "$options": "i"},
+		}
+	}
+
     // 3. LOGIC PAGINATION (Aman karena page & limit sudah pasti valid)
     skip := (page - 1) * limit
 
@@ -111,7 +124,8 @@ func GetAllSurveys(c *gin.Context) {
     findOptions.SetLimit(int64(limit))
     findOptions.SetSkip(int64(skip))
 
-    cursor, err := collection.Find(ctx, bson.M{}, findOptions)
+	// 4. EKSEKUSI QUERY DENGAN FILTER
+    cursor, err := collection.Find(ctx, filter, findOptions)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data"})
         return
@@ -121,6 +135,8 @@ func GetAllSurveys(c *gin.Context) {
     for cursor.Next(ctx) {
         var survey models.Survey
         if err := cursor.Decode(&survey); err != nil {
+			// Kita cetak errornya ke terminal agar ketahuan penyebabnya
+            fmt.Println("❌ ERROR DECODE DATA:", err)
             continue
         }
         surveys = append(surveys, survey)
@@ -131,14 +147,19 @@ func GetAllSurveys(c *gin.Context) {
         surveys = []models.Survey{}
     }
 
-    c.JSON(http.StatusOK, gin.H{
+	// 5. HITUNG TOTAL DATA (Untuk keperluan Frontend Pagination nanti)
+    total, _ := collection.CountDocuments(ctx, filter)
+
+   c.JSON(http.StatusOK, gin.H{
         "status": "success",
         "data":   surveys,
         "meta": gin.H{
-            "page":  page,
-            "limit": limit,
+            "page":        page,
+            "limit":       limit,
+            "total_data":  total,
+            "total_pages": (total + int64(limit) - 1) / int64(limit),
         },
-    })
+	})
 }
 
 // GetSurveyBySlug: Mengambil satu survei detail berdasarkan slug URL

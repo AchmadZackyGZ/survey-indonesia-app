@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { surveyService, Survey } from "@/services/surveyService";
 import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/hooks/useDebounce"; // Hook yang baru kita buat
 import {
   BarChart3,
   Calendar,
@@ -18,10 +19,16 @@ export default function PusatDataPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Gunakan Debounce (Tunggu 500ms setelah berhenti mengetik)
+  const debouncedSearch = useDebounce(searchQuery, 1000);
+
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true); // Tampilkan loading saat mencari
       try {
-        const res = await surveyService.getAll();
+        // Kirim kata kunci pencarian ke Backend
+        // page=1, limit=100, search=debouncedSearch
+        const res = await surveyService.getAll(1, 100, debouncedSearch);
         setSurveys(res.data || []);
       } catch (error) {
         console.error("Gagal memuat data survei:", error);
@@ -30,11 +37,13 @@ export default function PusatDataPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [debouncedSearch]);
 
-  const filteredData = surveys.filter((item) =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // filteredData sudah tidak diperlukan karena filtering dilakukan di backend
+  // filtering data ini adalah client-side filtering yang lama so jadiii tidak perlu pake lagi
+  // const filteredData = surveys.filter((item) =>
+  //   item.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  // );
 
   if (loading) {
     return (
@@ -80,9 +89,9 @@ export default function PusatDataPage() {
         </div>
 
         {/* --- GRID SURVEI (Style Persis Publikasi) --- */}
-        {filteredData.length > 0 ? (
+        {surveys.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredData.map((item) => (
+            {surveys.map((item) => (
               <div
                 key={item.id}
                 className="group bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 hover:border-gold/50 transition-all duration-300 flex flex-col hover:shadow-2xl hover:shadow-gold/10"
@@ -181,7 +190,7 @@ export default function PusatDataPage() {
             <Button
               onClick={() => setSearchQuery("")}
               variant="ghost"
-              className="mt-4 text-gold hover:text-white"
+              className="mt-4 text-gold hover:text-gold transition-colors"
             >
               Reset Pencarian
             </Button>

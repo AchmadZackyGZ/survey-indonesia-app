@@ -179,8 +179,8 @@ export default function PublicPublicationsPage() {
             </p>
             <Button
               onClick={() => setSearchQuery("")}
-              variant="outline"
-              className="mt-6 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800"
+              variant="ghost"
+              className="mt-4 text-gold hover:text-gold transition-colors"
             >
               Reset Pencarian
             </Button>

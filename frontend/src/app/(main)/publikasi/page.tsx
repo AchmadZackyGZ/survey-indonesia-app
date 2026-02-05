@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { publicationService, Publication } from "@/services/publicationService";
 import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/hooks/useDebounce"; // 1. Import Hook Debounce
 import {
   Calendar,
   User,
@@ -11,7 +12,6 @@ import {
   Loader2,
   FileText,
   Search,
-  Filter,
 } from "lucide-react";
 
 export default function PublicPublicationsPage() {
@@ -19,10 +19,17 @@ export default function PublicPublicationsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // 2. Pasang Debounce (Jeda 500ms agar hemat resource server)
+  const debouncedSearch = useDebounce(searchQuery, 500);
+
+  // 3. Effect: Jalan setiap kali hasil ketikan berhenti (debouncedSearch berubah)
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true); // Tampilkan loading spinner saat mencari
       try {
-        const res = await publicationService.getAll();
+        // Panggil API dengan parameter SEARCH
+        // page=1, limit=9 (agar grid rapi), search=...
+        const res = await publicationService.getAll(1, 9, debouncedSearch);
         setPublications(res.data || []);
       } catch (error) {
         console.error("Gagal memuat publikasi:", error);
@@ -31,12 +38,9 @@ export default function PublicPublicationsPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [debouncedSearch]); // Dependency array ke debouncedSearch
 
-  // Filter Search
-  const filteredData = publications.filter((item) =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // HAPUS Client-side filter (filteredData) karena data sudah disaring Backend
 
   if (loading) {
     return (
@@ -83,9 +87,10 @@ export default function PublicPublicationsPage() {
         </div>
 
         {/* --- GRID ARTIKEL --- */}
-        {filteredData.length > 0 ? (
+        {/* GUNAKAN 'publications' LANGSUNG (Bukan filteredData) */}
+        {publications.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredData.map((item) => (
+            {publications.map((item) => (
               <div
                 key={item.id}
                 className="group bg-slate-900/50 rounded-2xl overflow-hidden border border-slate-800 hover:border-gold/50 transition-all duration-300 flex flex-col hover:shadow-2xl hover:shadow-gold/5"

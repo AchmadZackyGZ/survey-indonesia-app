@@ -21,7 +21,7 @@ export default function Sidebar() {
     { name: "Data Survei", href: "/admin/surveys", icon: BarChart3 },
     { name: "Publikasi", href: "/admin/publications", icon: FileText },
     { name: "Pesan Masuk", href: "/admin/inbox", icon: Mail },
-    { name: "Tim & User", href: "/admin/users", icon: Users },
+    { name: "Manajemen Tim", href: "/admin/teams", icon: Users },
   ];
 
   const isActive = (path: string) => pathname.startsWith(path);

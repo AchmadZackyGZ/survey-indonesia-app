@@ -14,13 +14,12 @@ func GetDashboardStats(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// 1. Definisikan Collection yang mau dihitung
+	// 1. Definisikan Collection
 	surveyColl := config.GetCollection("surveys")
 	pubColl := config.GetCollection("publications")
 	contactColl := config.GetCollection("contacts")
 
-	// 2. Hitung Jumlah Data (CountDocuments)
-	// bson.M{} artinya "hitung semua data tanpa filter"
+	// 2. Hitung Jumlah Data
 	totalSurveys, _ := surveyColl.CountDocuments(ctx, bson.M{})
 	totalPubs, _ := pubColl.CountDocuments(ctx, bson.M{})
 	totalContacts, _ := contactColl.CountDocuments(ctx, bson.M{})
@@ -31,7 +30,7 @@ func GetDashboardStats(c *gin.Context) {
 		"data": gin.H{
 			"total_surveys":      totalSurveys,
 			"total_publications": totalPubs,
-			"total_messages":     totalContacts,
+			"total_contacts":     totalContacts, // <-- HARUS total_contacts (Bukan total_messages)
 		},
 	})
 }

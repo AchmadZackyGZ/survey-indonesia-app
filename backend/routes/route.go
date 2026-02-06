@@ -17,8 +17,11 @@ func SetupRoutes(router *gin.Engine) {
 		api.GET("/surveys/:slug", controllers.GetSurveyBySlug)
 		api.GET("/publications", controllers.GetAllPublications)
 		api.GET("/publications/:slug", controllers.GetPublicationBySlug)
-		api.GET("/teams", controllers.GetAllTeamMembers)
 		api.POST("/contacts", controllers.CreateContact)
+
+		// --- TEAMS PUBLIC ---
+		api.GET("/teams", controllers.GetAllTeamMembers)      // List di halaman Tentang Kami
+		api.GET("/teams/:id", controllers.GetTeamMemberById)  // 🔥 BARU: Untuk halaman Detail Ahli
 		
 
 		// === PROTECTED ROUTES (Hanya Admin yang punya Token) ===
@@ -34,9 +37,6 @@ func SetupRoutes(router *gin.Engine) {
 			
 			// CRUD Publication (Create)
 			protected.POST("/publications", controllers.CreatePublication)
-
-			// CRUD Team (Create)
-			protected.POST("/teams", controllers.CreateTeamMember)
 			
 			// delete surveys
 			protected.DELETE("/surveys/:id", controllers.DeleteSurvey)
@@ -56,6 +56,11 @@ func SetupRoutes(router *gin.Engine) {
 			// Agar hanya admin yang login yang bisa baca & hapus pesan
 			protected.GET("/contacts", controllers.GetAllContacts)       // Baca Inbox
 			protected.DELETE("/contacts/:id", controllers.DeleteContact) // Hapus Pesan
+
+			// --- 🔥 CRUD TEAM MEMBER (ADMIN) 🔥 ---
+			protected.POST("/teams", controllers.CreateTeamMember)
+			protected.PUT("/teams/:id", controllers.UpdateTeamMember)    // Edit
+			protected.DELETE("/teams/:id", controllers.DeleteTeamMember) // Hapus
 		}
 	}
 }

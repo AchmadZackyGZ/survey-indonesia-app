@@ -1,23 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { teamService, TeamMember } from "@/services/teamService";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
   Target,
-  Users,
-  Linkedin,
-  Loader2,
   User,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
+// 1. IMPORT TIPE DARI EMBLA CAROUSEL
+import { EmblaCarouselType } from "embla-carousel";
 
 export default function TentangKamiPage() {
   const [teams, setTeams] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch Data dari Database
+  // --- CONFIG CAROUSEL ---
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+
+  // 1. Fetch Data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -31,6 +39,38 @@ export default function TentangKamiPage() {
     };
     fetchData();
   }, []);
+
+  // 2. Carousel Logic (Dots & Navigation)
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
+  // --- PERBAIKAN TIPE DATA DI SINI (Ganti 'any' dengan 'EmblaCarouselType') ---
+  const onInit = useCallback((emblaApi: EmblaCarouselType) => {
+    setScrollSnaps(emblaApi.scrollSnapList());
+  }, []);
+
+  const onSelect = useCallback((emblaApi: EmblaCarouselType) => {
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, []);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onInit(emblaApi);
+    onSelect(emblaApi);
+    emblaApi.on("reInit", onInit);
+    emblaApi.on("reInit", onSelect);
+    emblaApi.on("select", onSelect);
+  }, [emblaApi, onInit, onSelect]);
+
+  const scrollTo = useCallback(
+    (index: number) => emblaApi && emblaApi.scrollTo(index),
+    [emblaApi],
+  );
 
   return (
     <div className="min-h-screen bg-navy-950 text-slate-300">
@@ -91,7 +131,7 @@ export default function TentangKamiPage() {
               </div>
             </div>
           </div>
-          {/* Ilustrasi Visi Misi */}
+          {/* Ilustrasi */}
           <div className="relative h-[400px] rounded-2xl overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-transparent z-10" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -104,17 +144,40 @@ export default function TentangKamiPage() {
         </div>
       </section>
 
-      {/* 3. DEWAN PAKAR (DINAMIS DARI DATABASE) */}
-      <section className="py-20 bg-slate-900 border-y border-slate-800">
+      {/* 3. DEWAN PAKAR (SLIDER VERSION) */}
+      <section className="py-20 bg-slate-900 border-y border-slate-800 overflow-hidden">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-serif font-bold text-white mb-4">
-              Dewan Pakar
-            </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Didukung oleh para akademisi dan peneliti berpengalaman di
-              bidangnya masing-masing.
-            </p>
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+            <div className="max-w-2xl">
+              <h2 className="text-3xl font-serif font-bold text-white mb-4">
+                Dewan Pakar
+              </h2>
+              <p className="text-slate-400">
+                Didukung oleh para akademisi dan peneliti berpengalaman di
+                bidangnya masing-masing.
+              </p>
+            </div>
+
+            {/* Tombol Navigasi Desktop */}
+            <div className="hidden md:flex gap-3">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={scrollPrev}
+                className="rounded-full border-slate-700 hover:bg-gold hover:border-gold hover:text-slate-950 transition-colors w-12 h-12"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={scrollNext}
+                className="rounded-full border-slate-700 hover:bg-gold hover:border-gold hover:text-slate-950 transition-colors w-12 h-12"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </Button>
+            </div>
           </div>
 
           {loading ? (
@@ -122,53 +185,101 @@ export default function TentangKamiPage() {
               <Loader2 className="w-8 h-8 text-gold animate-spin" />
             </div>
           ) : teams.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {teams.map((item) => (
-                <Link
-                  href={`/tentang-kami/tim/${item.id}`}
-                  key={item.id}
-                  className="group block"
+            <>
+              {/* --- CAROUSEL AREA --- */}
+              <div className="relative">
+                <div
+                  className="overflow-hidden cursor-grab active:cursor-grabbing"
+                  ref={emblaRef}
                 >
-                  <div className="p-8 rounded-2xl bg-navy-950 border border-slate-800 hover:border-gold/50 transition-all duration-300 hover:shadow-2xl hover:shadow-gold/5 flex flex-col items-center text-center h-full">
-                    {/* Foto Profil */}
-                    <div className="w-32 h-32 mx-auto bg-slate-800 rounded-full mb-6 overflow-hidden border-4 border-slate-800 group-hover:border-gold transition-colors shadow-lg">
-                      {item.photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.photo_url}
-                          alt={item.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-500">
-                          <User className="w-12 h-12" />
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex -ml-6 py-4">
+                    {teams.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] min-w-0 pl-6"
+                      >
+                        <Link
+                          href={`/tentang-kami/tim/${item.id}`}
+                          className="block h-full"
+                        >
+                          <div className="group h-full p-8 rounded-2xl bg-navy-950 border border-slate-800 hover:border-gold/50 transition-all duration-300 hover:shadow-2xl hover:shadow-gold/5 flex flex-col items-center text-center relative">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-1 bg-gradient-to-r from-transparent via-gold/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                    {/* Info */}
-                    <h3 className="text-xl font-bold text-white group-hover:text-gold transition-colors mb-2">
-                      {item.name}
-                    </h3>
-                    <p className="text-gold/80 font-medium text-sm mb-4 uppercase tracking-wider">
-                      {item.role}
-                    </p>
+                            <div className="w-32 h-32 mx-auto bg-slate-800 rounded-full mb-6 overflow-hidden border-4 border-slate-800 group-hover:border-gold transition-colors shadow-lg relative z-10">
+                              {item.photo_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={item.photo_url}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-slate-500">
+                                  <User className="w-12 h-12" />
+                                </div>
+                              )}
+                            </div>
 
-                    {/* Cuplikan Bio */}
-                    <p className="text-slate-400 text-sm line-clamp-3 mb-6">
-                      {item.bio}
-                    </p>
+                            <h3 className="text-xl font-bold text-white group-hover:text-gold transition-colors mb-2">
+                              {item.name}
+                            </h3>
+                            <p className="text-gold/80 font-medium text-sm mb-4 uppercase tracking-wider">
+                              {item.role}
+                            </p>
 
-                    {/* Tombol Lihat Profil (Fake Button for UI) */}
-                    <div className="mt-auto pt-4 border-t border-slate-800 w-full flex justify-center gap-4">
-                      <span className="text-xs font-bold text-gold opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 duration-300">
-                        Lihat Profil Lengkap &rarr;
-                      </span>
-                    </div>
+                            <p className="text-slate-400 text-sm line-clamp-3 mb-6">
+                              {item.bio}
+                            </p>
+
+                            <div className="mt-auto pt-4 border-t border-slate-800 w-full flex justify-center">
+                              <span className="text-xs font-bold text-gold opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 duration-300">
+                                Lihat Profil Lengkap &rarr;
+                              </span>
+                            </div>
+                          </div>
+                        </Link>
+                      </div>
+                    ))}
                   </div>
-                </Link>
-              ))}
-            </div>
+                </div>
+              </div>
+
+              {/* --- DOTS INDICATOR --- */}
+              <div className="flex justify-center items-center gap-2 mt-8">
+                {scrollSnaps.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => scrollTo(index)}
+                    className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                      index === selectedIndex
+                        ? "bg-gold w-8"
+                        : "bg-slate-700 hover:bg-slate-600"
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Navigasi Mobile */}
+              <div className="flex md:hidden justify-center gap-4 mt-6">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={scrollPrev}
+                  className="rounded-full border-slate-700 hover:bg-slate-800"
+                >
+                  <ChevronLeft className="w-5 h-5 text-slate-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={scrollNext}
+                  className="rounded-full border-slate-700 hover:bg-slate-800"
+                >
+                  <ChevronRight className="w-5 h-5 text-slate-400" />
+                </Button>
+              </div>
+            </>
           ) : (
             <div className="text-center text-slate-500 py-10 border border-dashed border-slate-800 rounded-xl">
               Belum ada data dewan pakar.

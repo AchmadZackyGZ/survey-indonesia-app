@@ -15,23 +15,57 @@ import {
   Calendar,
   AlertCircle,
   Eye,
+  ChevronLeft, // Icon Baru
+  ChevronRight, // Icon Baru
 } from "lucide-react";
+
+interface MetaData {
+  page: number;
+  limit: number;
+  total_pages: number;
+  total_data: number;
+}
+
+interface SurveyApiResponse {
+  status: string;
+  data: Survey[];
+  meta?: MetaData; // Tanda tanya (?) artinya optional, jaga-jaga kalau backend lupa kirim
+}
 
 export default function SurveysPage() {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  // 2. Pasang Debounce (Jeda 500ms)
+  // State Pagination & Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10; // Kita batasi 10 agar pagination terlihat
+
+  // 2. Pasang Debounce (Jeda 500ms agar hemat resource server)
   const debouncedSearch = useDebounce(searchQuery, 500);
+
+  // 1. Reset ke Halaman 1 jika user mencari sesuatu
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
 
   // 3. Fetch Data (Server-Side Search)
   const loadData = async () => {
     setLoading(true);
     try {
-      // Page 1, Limit 100, Search Query
-      const res = await surveyService.getAll(1, 100, debouncedSearch);
+      // Panggil API dengan parameter Page & Limit yang dinamis
+      // Response API kita: { data: [...], meta: { total_pages: ... } }
+      const res = (await surveyService.getAll(
+        currentPage,
+        itemsPerPage,
+        debouncedSearch,
+      )) as SurveyApiResponse;
       setSurveys(res.data || []);
+      // Ambil info total halaman dari backend (meta)
+      if (res.meta) {
+        setTotalPages(res.meta.total_pages);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -39,12 +73,11 @@ export default function SurveysPage() {
     }
   };
 
-  // 4. Effect: Jalan otomatis saat debouncedSearch berubah
+  // 3. Effect: Reload saat Search berubah ATAU Halaman berubah
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch]);
-
+  }, [debouncedSearch, currentPage]);
   const handleDelete = async (id: string) => {
     if (
       confirm("Yakin ingin menghapus survei ini? Data tidak bisa dikembalikan.")
@@ -52,6 +85,15 @@ export default function SurveysPage() {
       await surveyService.deleteSurvey(id); // Pastikan pakai deleteSurvey (sesuai service)
       loadData();
     }
+  };
+
+  // Fungsi Navigasi Halaman
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
 
   return (
@@ -290,6 +332,37 @@ export default function SurveysPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* --- 2. PAGINATION CONTROLS (STYLING DIPERBAIKI) --- */}
+          <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-sm text-slate-500">
+              Halaman{" "}
+              <span className="font-bold text-slate-900">{currentPage}</span>{" "}
+              dari {totalPages}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrev}
+                disabled={currentPage === 1}
+                // Kita perjelas warnanya: border lebih gelap, text lebih gelap
+                // dan saat disabled opacity-nya 50% (bukan hilang)
+                className="h-9 px-4 border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNext}
+                disabled={currentPage >= totalPages}
+                className="h-9 px-4 border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Next <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
           </div>
         </>
       )}

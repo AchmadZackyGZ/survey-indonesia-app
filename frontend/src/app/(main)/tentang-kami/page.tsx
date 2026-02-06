@@ -138,7 +138,7 @@ export default function TentangKamiPage() {
         <h2 className="text-2xl font-bold text-white mb-6">
           Ingin Bekerjasama dengan Kami?
         </h2>
-        <Link href="/kontak">
+        <Link href="/hubungi-kami">
           <Button
             size="lg"
             className="bg-gold text-slate-950 hover:bg-gold-light font-bold"

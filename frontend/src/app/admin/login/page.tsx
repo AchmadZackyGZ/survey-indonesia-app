@@ -7,6 +7,10 @@ import { AxiosError } from "axios"; // Import AxiosError untuk handling error ra
 import { Button } from "@/components/ui/button";
 import { Lock, Mail, Loader2, AlertCircle } from "lucide-react";
 
+interface BackendErrorResponse {
+  error: string;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -49,15 +53,17 @@ export default function LoginPage() {
       } else {
         throw new Error("Token tidak ditemukan dalam respon server");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login Error:", error);
 
       // ----------------------------------------------------
       // SOLUSI 2: TAMPILKAN PESAN ERROR SPESIFIK
       // ----------------------------------------------------
       if (error instanceof AxiosError && error.response) {
+        const errorResponse = error.response.data as BackendErrorResponse;
+
         // Ambil pesan error dari Backend (gin.H{"error": "..."})
-        const backendMsg = error.response.data.error;
+        const backendMsg = errorResponse.error;
         setErrorMessage(backendMsg || "Terjadi kesalahan pada server.");
       } else {
         setErrorMessage(

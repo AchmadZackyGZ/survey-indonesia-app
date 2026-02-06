@@ -51,6 +51,11 @@ func SetupRoutes(router *gin.Engine) {
 			protected.GET("/publications/id/:id", controllers.GetPublicationById) // Khusus Admin ambil by ID
 			
 			protected.PUT("/publications/:id", controllers.UpdatePublication)     // Update
+
+			// 🔥 INI DIA: ADMIN INBOX (HARUS DI SINI) 🔥
+			// Agar hanya admin yang login yang bisa baca & hapus pesan
+			protected.GET("/contacts", controllers.GetAllContacts)       // Baca Inbox
+			protected.DELETE("/contacts/:id", controllers.DeleteContact) // Hapus Pesan
 		}
 	}
 }

@@ -2,15 +2,17 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/AchmadZackyGZ/survey-backend/config"
 	"github.com/AchmadZackyGZ/survey-backend/models"
-	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson" // Tambahan untuk GetAll
+	"github.com/gin-gonic/gin" // Tambahan untuk GetAll
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options" // Tambahan untuk GetAll
+	"go.mongodb.org/mongo-driver/mongo/options"
+	// Tambahan untuk GetAll
 )
 
 func CreateContact(c *gin.Context) {
@@ -41,33 +43,62 @@ func CreateContact(c *gin.Context) {
 	})
 }
 
-// ---------------------------------------------
-// 2. FUNGSI GET ALL (Untuk Admin Panel Nanti)
-// ---------------------------------------------
-func GetAllMessages(c *gin.Context) {
-    collection := config.GetCollection("contacts")
+func GetAllContacts(c *gin.Context){
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-    // Urutkan dari yang terbaru (descending by created_at)
-    findOptions := options.Find()
-    findOptions.SetSort(bson.D{{Key: "created_at", Value: -1}})
+	var contacts []models.Contact
+	collection := config.GetCollection("contacts")
 
-    cursor, err := collection.Find(context.Background(), bson.M{}, findOptions)
-    if err != nil {
+	// urutkan dari yang terbaru 
+	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+
+	cursor, err := collection.Find(ctx, bson.M{}, opts)
+	if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data pesan"})
         return
     }
-    defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
-    // PERBAIKAN DISINI JUGA: Gunakan 'models.Contact'
-    var messages []models.Contact
-    
-    if err = cursor.All(context.Background(), &messages); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal parsing data"})
+	for cursor.Next(ctx) {
+        var contact models.Contact
+        if err := cursor.Decode(&contact); err != nil {
+			fmt.Println("❌ ERROR DECODE DATA:", err)
+            continue
+        }
+        contacts = append(contacts, contact)
+    }
+
+	if contacts == nil {
+        contacts = []models.Contact{}
+    }
+
+	c.JSON(http.StatusOK, gin.H{
+        "status": "success",
+        "data":   contacts,
+    })
+}
+
+// --- TAMBAHAN BARU: DELETE CONTACT ---
+func DeleteContact(c *gin.Context) {
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    contactId := c.Param("id")
+    objId, _ := primitive.ObjectIDFromHex(contactId)
+
+    collection := config.GetCollection("contacts")
+    res, err := collection.DeleteOne(ctx, bson.M{"_id": objId})
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus pesan"})
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{
-        "status": "success",
-        "data":   messages,
-    })
+    if res.DeletedCount == 0 {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Pesan tidak ditemukan"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Pesan berhasil dihapus"})
 }

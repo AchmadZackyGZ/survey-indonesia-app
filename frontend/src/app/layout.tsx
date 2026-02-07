@@ -11,8 +11,21 @@ const merriweather = Merriweather({
 });
 
 export const metadata: Metadata = {
-  title: "Lembaga Survei Indonesia",
-  description: "Company Profile & Data Center",
+  title: {
+    default: "LSI - Lembaga Survei Indonesia",
+    template: "%s | LSI", // Nanti judul halaman jadi: "Judul Berita | LSI"
+  },
+  description: "Lembaga riset independen pengungkap aspirasi publik Indonesia.",
+  icons: {
+    icon: "/favicon.ico", // Pastikan Anda punya favicon
+  },
+  openGraph: {
+    title: "LSI - Lembaga Survei Indonesia",
+    description: "Barometer opini publik terpercaya di Indonesia.",
+    type: "website",
+    locale: "id_ID",
+    siteName: "Lembaga Survei Indonesia",
+  },
 };
 
 export default function RootLayout({

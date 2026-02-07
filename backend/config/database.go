@@ -50,7 +50,7 @@ func ConnectDB() *mongo.Client {
 		log.Fatal("Gagal ping ke MongoDB (Cek IP Whitelist / Password Salah?):", err)
 	}
 
-	fmt.Println("✅ Berhasil terkoneksi ke MongoDB!")
+	fmt.Println("Berhasil terkoneksi ke MongoDB!")
 
 	// Simpan ke variabel global
 	DB = client

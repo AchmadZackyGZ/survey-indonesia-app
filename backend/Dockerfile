@@ -1,5 +1,5 @@
 # 1. Gunakan Base Image Golang versi terbaru
-FROM golang:1.23-alpine
+FROM golang:alpine
 
 # 2. Set folder kerja di dalam container
 WORKDIR /app

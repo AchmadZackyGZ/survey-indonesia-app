@@ -2,11 +2,13 @@ import axios from "axios";
 
 // Buat instance Axios
 const api = axios.create({
-  // Pastikan port sesuai backend Go Anda (biasanya 8080)
+  // Jika sedang di Vercel, pakai URL environment.
+  // Jika di laptop (dev), pakai localhost.
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api",
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 // =================================================================
